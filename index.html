@@ -224,6 +224,16 @@
                 <option value="approved">อนุมัติ</option><option value="rejected">ปฏิเสธ</option>
             </select>
          </div>
+	<!-- เพิ่ม Dropdown เรียงลำดับตรงนี้ -->
+         <div>
+            <label class="block text-sm font-medium mb-1">เรียงลำดับ</label>
+            <select id="sortBooking" onchange="filterBookings()" class="px-4 py-2 border rounded-lg outline-none bg-white font-medium text-gray-700">
+                <option value="created_desc">วันที่ทำรายการ (ใหม่-เก่า)</option>
+                <option value="created_asc">วันที่ทำรายการ (เก่า-ใหม่)</option>
+                <option value="date_asc">วันที่เข้าใช้ห้อง (ใกล้วัน-ไกลวัน)</option>
+                <option value="date_desc">วันที่เข้าใช้ห้อง (ไกลวัน-ใกล้วัน)</option>
+            </select>
+         </div>
          <button onclick="refreshBookings()" class="px-4 py-2 bg-gray-100 rounded-lg flex items-center gap-2 transition hover:bg-gray-200"><i data-lucide="refresh-cw" class="w-4 h-4 text-gray-600"></i> รีเฟรช</button>
        </div>
        <div class="bg-white rounded-xl card-shadow overflow-hidden">
@@ -312,6 +322,16 @@
             <label class="block text-sm font-medium mb-1">สถานะ</label>
             <select id="reportStatus" class="px-4 py-2 border rounded-lg outline-none">
                 <option value="">ทั้งหมด</option><option value="approved">อนุมัติแล้ว</option><option value="pending">รอตรวจสอบ</option><option value="rejected">ปฏิเสธ</option>
+            </select>
+         </div>
+		 <!-- เพิ่ม Dropdown เรียงลำดับตรงนี้ -->
+         <div>
+            <label class="block text-sm font-medium mb-1">เรียงลำดับตาราง</label>
+            <select id="sortReport" class="px-4 py-2 border rounded-lg outline-none bg-white font-medium text-gray-700">
+                <option value="date_asc">วันที่เข้าใช้ห้อง (เก่า-ใหม่)</option>
+                <option value="date_desc">วันที่เข้าใช้ห้อง (ใหม่-เก่า)</option>
+                <option value="created_desc">วันที่ทำรายการ (ใหม่-เก่า)</option>
+                <option value="created_asc">วันที่ทำรายการ (เก่า-ใหม่)</option>
             </select>
          </div>
          <button onclick="generateReport()" class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow"><i data-lucide="search" class="w-4 h-4"></i> ค้นหาข้อมูล</button>
@@ -750,6 +770,27 @@
 	const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymc2vIiUgk91qshok1TtSQY4OgSj61QXHHZXyZTVHH_uxCrX2dnUX1IEtpFvmCyoDs/exec'; 
     const thaiMonthsNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
     const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+// --- Helper: ฟังก์ชันสำหรับเรียงลำดับข้อมูล ---
+    function sortBookingArray(arr, sortType) {
+        return arr.sort((a, b) => {
+            if (sortType === 'created_desc') {
+                return parseInt(b.id) - parseInt(a.id); // วันที่ทำรายการ ใหม่สุด-เก่าสุด
+            }
+            if (sortType === 'created_asc') {
+                return parseInt(a.id) - parseInt(b.id); // วันที่ทำรายการ เก่าสุด-ใหม่สุด
+            }
+            if (sortType === 'date_desc') {
+                let dateDiff = new Date(b.date) - new Date(a.date);
+                return dateDiff === 0 ? parseInt(b.id) - parseInt(a.id) : dateDiff; // วันที่ใช้ห้อง ใหม่สุด-เก่าสุด
+            }
+            if (sortType === 'date_asc') {
+                let dateDiff = new Date(a.date) - new Date(b.date);
+                return dateDiff === 0 ? parseInt(a.id) - parseInt(b.id) : dateDiff; // วันที่ใช้ห้อง เก่าสุด-ใหม่สุด
+            }
+            return 0;
+        });
+    }
 
     // --- Utils (เปลี่ยนมาใช้ fetch API) ---
   function apiCall(action, data={}) {
@@ -1530,6 +1571,11 @@
         let tableList = dashList;
         if(st) tableList = tableList.filter(b => b.status === st);
         
+		// --- เพิ่มโค้ดจัดเรียงลำดับ (Sorting) ตรงนี้ ---
+        const sortType = document.getElementById('sortBooking').value || 'created_desc';
+        tableList = sortBookingArray(tableList, sortType);
+        // ------------------------------------------
+		
         window.currentBookings = tableList; 
         pagination.page = 1; 
         renderBookingTable();
@@ -1806,6 +1852,11 @@
         // 2. ข้อมูลสำหรับตาราง (กรองสถานะเพิ่มเติม)
         let tableList = dashList;
         if(st) tableList = tableList.filter(b=>b.status===st);
+		
+	// --- เพิ่มโค้ดจัดเรียงลำดับ (Sorting) ตรงนี้ ---
+        const sortType = document.getElementById('sortReport').value || 'date_asc';
+        tableList = sortBookingArray(tableList, sortType);
+        // ------------------------------------------
 
         // วาดตาราง
         document.getElementById('reportTableBody').innerHTML = tableList.length===0 ? `<tr><td colspan="8" class="p-8 text-center text-gray-500">ไม่พบข้อมูล</td></tr>` : tableList.map(b=>{
@@ -1850,6 +1901,11 @@
         if(st) tableList = tableList.filter(b=>b.status===st);
 
         if(tableList.length===0) return showToast('ไม่มีข้อมูล', 'error');
+		
+	// --- เพิ่มโค้ดจัดเรียงลำดับ (Sorting) ก่อน Export ตรงนี้ ---
+        const sortType = document.getElementById('sortReport').value || 'date_asc';
+        tableList = sortBookingArray(tableList, sortType);
+        // ---------------------------------------------------
         
         let totalTp = 0, totalVips = 0, totalStaff = 0;
 
