@@ -85,7 +85,17 @@
       <div class="mb-4"><label class="block text-sm font-medium mb-2">หน่วยงาน</label> <input type="text" id="regOrganization" class="w-full px-4 py-3 border rounded-xl outline-none" placeholder="กรอกชื่อหน่วยงาน"></div>
       <div class="mb-4"><label class="block text-sm font-medium mb-2">ชื่อผู้ใช้</label> <input type="text" id="regUsername" class="w-full px-4 py-3 border rounded-xl outline-none" placeholder="สำหรับเข้าสู่ระบบ"></div>
       <div class="mb-6"><label class="block text-sm font-medium mb-2">รหัสผ่าน</label> <input type="password" id="regPassword" class="w-full px-4 py-3 border rounded-xl outline-none" placeholder="อย่างน้อย 6 ตัว"></div>
-      <button onclick="handleRegister()" class="w-full btn-primary text-white py-3 rounded-xl font-medium shadow-lg shadow-green-500/30"> สมัครสมาชิก </button>
+      <!-- ส่วนที่เพิ่มใหม่: PDPA Checkbox -->
+      <div class="mb-6 bg-gray-50 p-3 rounded-xl border border-gray-200">
+          <label class="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" id="regPdpa" class="mt-1 w-4 h-4 text-green-600 rounded focus:ring-green-500">
+              <span class="text-sm text-gray-600 leading-relaxed">
+                  ข้าพเจ้าได้อ่านและยอมรับ 
+                  <button type="button" onclick="openPdpaModal()" class="text-green-600 font-bold hover:underline">นโยบายความเป็นส่วนตัว (PDPA)</button>
+              </span>
+          </label>
+      </div>
+		 <button onclick="handleRegister()" class="w-full btn-primary text-white py-3 rounded-xl font-medium shadow-lg shadow-green-500/30"> สมัครสมาชิก </button>
       <p class="text-center mt-4 text-gray-500">มีบัญชีแล้ว? <button onclick="showLogin()" class="text-green-600 font-medium hover:underline">เข้าสู่ระบบ</button></p>
      </div>
     </div>
@@ -431,7 +441,11 @@
                <div><label class="block text-sm font-medium mb-1 text-gray-700">ชื่อระบบ (บรรทัดที่ 1)</label><input type="text" id="systemName" class="w-full border p-2.5 rounded-lg focus:ring-2 outline-none focus:ring-green-500"></div>
                <div><label class="block text-sm font-medium mb-1 text-gray-700">ข้อความต้อนรับ (บรรทัดที่ 2)</label><input type="text" id="systemSubName" class="w-full border p-2.5 rounded-lg focus:ring-2 outline-none focus:ring-green-500"></div>
                <div><label class="block text-sm font-medium mb-1 text-gray-700">ข้อความ Footer ด้านล่างสุด</label><input type="text" id="footerText" class="w-full border p-2.5 rounded-lg focus:ring-2 outline-none focus:ring-green-500"></div>
-               <div class="md:col-span-2">
+               <div class="md:col-span-2 mt-2">
+                   <label class="block text-sm mb-1 font-medium text-green-700"><i data-lucide="shield-check" class="w-4 h-4 inline"></i> ข้อความนโยบายความเป็นส่วนตัว (PDPA) ตอนสมัครสมาชิก</label>
+                   <textarea id="settingPdpaText" rows="4" class="w-full border p-2.5 rounded-lg focus:ring-2 outline-none bg-green-50/50" placeholder="พิมพ์ข้อความข้อตกลง PDPA..."></textarea>
+               </div>
+			   <div class="md:col-span-2">
                    <label class="block text-sm mb-1 font-medium text-green-700"><i data-lucide="link" class="w-3 h-3 inline"></i> ลิงก์รูปโลโก้ (เว้นว่างเพื่อใช้ไอคอนเริ่มต้น)</label>
                    <input type="url" id="logoUrl" class="w-full border p-2.5 rounded-lg focus:ring-2 outline-none bg-green-50/50" placeholder="https://example.com/logo.png">
                </div>
@@ -751,13 +765,30 @@
    <div id="customAlertModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4"><div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAlert()"></div><div class="relative bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl animate-fadeIn p-6 text-center"><div id="alertIconContainer" class="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"></div><h3 id="alertTitle" class="text-xl font-bold text-gray-800 mb-2">แจ้งเตือน</h3><p id="alertMessage" class="text-gray-600 mb-6 text-sm"></p><button onclick="closeAlert()" class="w-full py-3 rounded-xl font-medium text-white transition shadow-lg" id="alertBtn">ตกลง</button></div></div>
    
    <div id="toastContainer" class="fixed bottom-4 right-4 z-[110] space-y-2"></div>
+	<!-- Modal PDPA Consent -->
+   <div id="pdpaModal" class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closePdpaModal()"></div>
+    <div class="relative bg-white rounded-2xl w-full max-w-lg flex flex-col shadow-2xl animate-fadeIn max-h-[80vh]">
+        <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-green-50 rounded-t-2xl">
+            <h3 class="text-lg font-bold text-green-800 flex items-center gap-2"><i data-lucide="shield-check" class="w-5 h-5"></i> นโยบายความเป็นส่วนตัว (PDPA)</h3>
+            <button onclick="closePdpaModal()" class="text-gray-500 hover:bg-white p-1.5 rounded-lg transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-6 overflow-y-auto text-sm text-gray-700 leading-relaxed whitespace-pre-wrap" id="pdpaModalContent">
+            <!-- ข้อความ PDPA จะมาแสดงตรงนี้ -->
+        </div>
+        <div class="p-4 border-t bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+            <button onclick="closePdpaModal()" class="px-5 py-2.5 bg-white border hover:bg-gray-100 rounded-xl transition font-medium text-gray-700 shadow-sm">ปิด</button>
+            <button onclick="acceptPdpa()" class="px-6 py-2.5 btn-primary text-white rounded-xl shadow-md font-bold flex items-center gap-2"><i data-lucide="check" class="w-4 h-4"></i> ข้าพเจ้ายอมรับ</button>
+        </div>
+    </div>
+   </div>
   </div>
 
   <script>
     // --- Global Variables ---
 	
     let currentUser=null, currentPage='home';
-    let systemSettings={ bannerEnabled:true, bannerSpeed:3, bookingDayType:'weekly', weeklyDays:[1,2,3,4,5], customDays:{}, timeSlots:['09:00-10:00','10:00-11:00','13:00-14:00','14:00-15:00'], advanceDays:3, systemName:'ระบบจองห้องรับรองพิเศษ', systemSubName:'ยินดีต้อนรับ', footerText:'Copyright', logoUrl:'', loginBgUrl:'', faviconUrl:'', banners:[{id:1,url:'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=400&fit=crop',active:true}] },currentSlide=0,slideInterval=null;
+    let systemSettings={ bannerEnabled:true, bannerSpeed:3, bookingDayType:'weekly', weeklyDays:[1,2,3,4,5], customDays:{}, timeSlots:['09:00-10:00','10:00-11:00','13:00-14:00','14:00-15:00'], advanceDays:3, systemName:'ระบบจองห้องรับรองพิเศษ', systemSubName:'ยินดีต้อนรับ', footerText:'Copyright', logoUrl:'', loginBgUrl:'', faviconUrl:'', banners:[{id:1,url:'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=400&fit=crop',active:true}],pdpaText: 'ข้าพเจ้ายินยอมให้ระบบจัดเก็บและประมวลผลข้อมูลส่วนบุคคล (ชื่อ, เบอร์โทร, อีเมล) เพื่อใช้ในการติดต่อและยืนยันตัวตนสำหรับการจองห้องรับรองพิเศษเท่านั้น ทั้งนี้ข้อมูลของท่านจะถูกเก็บรักษาเป็นความลับและไม่นำไปเผยแพร่ต่อบุคคลที่สาม' },currentSlide=0,slideInterval=null;
     let allBookings=[], allRooms=[], allSystemUsers=[];
     
     let calendarDate = new Date(), settingsCalendarDate = new Date();
@@ -921,11 +952,53 @@
         if(user){ currentUser=user; localStorage.setItem('vrm_currentUser',JSON.stringify(user)); showMainApp(true); showToast('เข้าสู่ระบบสำเร็จ','success'); }
         else showToast('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง','error');
     }
+    // 5.1 ฟังก์ชันเปิด/ปิด/ยอมรับ PDPA Modal (เพิ่มเข้าไปใหม่)
+    function openPdpaModal() {
+        document.getElementById('pdpaModalContent').textContent = systemSettings.pdpaText || 'ไม่พบข้อตกลงการใช้งาน';
+        document.getElementById('pdpaModal').classList.remove('hidden');
+        lucide.createIcons();
+    }
+    function closePdpaModal() { document.getElementById('pdpaModal').classList.add('hidden'); }
+    function acceptPdpa() {
+        document.getElementById('regPdpa').checked = true; // ติ๊กถูกให้อัตโนมัติ
+        closePdpaModal();
+    }
+
+    // 5.2 แก้ไขฟังก์ชัน handleRegister()
     async function handleRegister(){
-        const d={firstName:document.getElementById('regFirstName').value, lastName:document.getElementById('regLastName').value, email:document.getElementById('regEmail').value, phone:document.getElementById('regPhone').value, organization:document.getElementById('regOrganization').value, username:document.getElementById('regUsername').value, password:document.getElementById('regPassword').value, role:'user'};
+        // เช็คก่อนว่าติ๊ก PDPA หรือยัง
+        if(!document.getElementById('regPdpa').checked) {
+            return showToast('กรุณากดยอมรับ นโยบายความเป็นส่วนตัว (PDPA) ก่อนสมัครสมาชิก', 'error');
+        }
+
+        const d={
+            firstName:document.getElementById('regFirstName').value, 
+            lastName:document.getElementById('regLastName').value, 
+            email:document.getElementById('regEmail').value, 
+            phone:document.getElementById('regPhone').value, 
+            organization:document.getElementById('regOrganization').value, 
+            username:document.getElementById('regUsername').value, 
+            password:document.getElementById('regPassword').value, 
+            role:'user',
+            pdpaConsent: new Date().toLocaleString('th-TH') // บันทึก วันเวลา ที่กดยอมรับ
+        };
+
         if(!d.firstName||!d.username||!d.password) return showToast('กรอกข้อมูลให้ครบถ้วน','error');
-        const users = await apiCall('getUsers'); if(users.find(x=>x.username===d.username)) return showToast('ชื่อผู้ใช้นี้มีแล้ว','error');
-        await apiCall('addUser',d); showToast('สมัครสมาชิกสำเร็จ','success'); showLogin();
+        
+        showLoader('กำลังสมัครสมาชิก...');
+        try {
+            const users = await apiCall('getUsers'); 
+            if(users.find(x=>x.username===d.username)) { hideLoader(); return showToast('ชื่อผู้ใช้นี้มีแล้ว','error'); }
+            await apiCall('addUser',d); 
+            
+            // ล้างค่าฟอร์มและ Checkbox
+            document.querySelectorAll('#registerForm input').forEach(inp => inp.value = '');
+            document.getElementById('regPdpa').checked = false;
+            
+            hideLoader();
+            showToast('สมัครสมาชิกสำเร็จ','success'); 
+            showLogin();
+        } catch(e) { hideLoader(); }
     }
     function handleLogout(){ 
         currentUser=null; 
@@ -1936,6 +2009,8 @@
         document.getElementById('logoUrl').value = systemSettings.logoUrl || '';
         document.getElementById('loginBgUrl').value = systemSettings.loginBgUrl || '';
         document.getElementById('faviconUrl').value = systemSettings.faviconUrl || '';
+		document.getElementById('settingPdpaText').value = systemSettings.pdpaText || '';
+		
         
         document.querySelector(`input[name="bookingDayType"][value="${systemSettings.bookingDayType}"]`).checked = true;
         changeBookingDayType();
@@ -2043,6 +2118,7 @@
         systemSettings.logoUrl = document.getElementById('logoUrl').value;
         systemSettings.loginBgUrl = document.getElementById('loginBgUrl').value;
         systemSettings.faviconUrl = document.getElementById('faviconUrl').value;
+		systemSettings.pdpaText = document.getElementById('settingPdpaText').value;
 
         await apiCall('saveSettings', systemSettings);
         applySettingsToUI(); renderCalendar(); initBanner();
