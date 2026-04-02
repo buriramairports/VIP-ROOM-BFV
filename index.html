@@ -76,27 +76,66 @@
       <p class="text-center mt-4 text-gray-500">ยังไม่มีบัญชี? <button onclick="showRegister()" class="text-green-600 font-medium hover:underline">สมัครสมาชิก</button></p>
      </div>
      <div id="registerForm" class="hidden">
-      <div class="grid grid-cols-2 gap-4 mb-4">
-       <div><label class="block text-sm font-medium mb-2">ชื่อ</label> <input type="text" id="regFirstName" class="w-full px-4 py-3 border rounded-xl outline-none" placeholder="กรอกชื่อ"></div>
-       <div><label class="block text-sm font-medium mb-2">นามสกุล</label> <input type="text" id="regLastName" class="w-full px-4 py-3 border rounded-xl outline-none" placeholder="กรอกนามสกุล"></div>
-      </div>
-      <div class="mb-4"><label class="block text-sm font-medium mb-2">Email</label> <input type="email" id="regEmail" class="w-full px-4 py-3 border rounded-xl outline-none" placeholder="กรอกอีเมล"></div>
-      <div class="mb-4"><label class="block text-sm font-medium mb-2">เบอร์โทรศัพท์</label> <input type="tel" id="regPhone" class="w-full px-4 py-3 border rounded-xl outline-none" placeholder="กรอกเบอร์โทรศัพท์"></div>
-      <div class="mb-4"><label class="block text-sm font-medium mb-2">หน่วยงาน</label> <input type="text" id="regOrganization" class="w-full px-4 py-3 border rounded-xl outline-none" placeholder="กรอกชื่อหน่วยงาน"></div>
-      <div class="mb-4"><label class="block text-sm font-medium mb-2">ชื่อผู้ใช้</label> <input type="text" id="regUsername" class="w-full px-4 py-3 border rounded-xl outline-none" placeholder="สำหรับเข้าสู่ระบบ"></div>
-      <div class="mb-6"><label class="block text-sm font-medium mb-2">รหัสผ่าน</label> <input type="password" id="regPassword" class="w-full px-4 py-3 border rounded-xl outline-none" placeholder="อย่างน้อย 6 ตัว"></div>
-      <!-- ส่วนที่เพิ่มใหม่: PDPA Checkbox -->
-      <div class="mb-6 bg-gray-50 p-3 rounded-xl border border-gray-200">
+      
+      <!-- ปรับให้ใช้ Grid 2 คอลัมน์ (sm:grid-cols-2) เพื่อประหยัดพื้นที่แนวตั้ง -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 mb-4">
+       
+       <!-- ชื่อ & นามสกุล -->
+       <div>
+           <label class="block text-xs font-medium text-gray-700 mb-1">ชื่อ <span class="text-red-500">*</span></label> 
+           <input type="text" id="regFirstName" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="ชื่อจริง">
+       </div>
+       <div>
+           <label class="block text-xs font-medium text-gray-700 mb-1">นามสกุล</label> 
+           <input type="text" id="regLastName" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="นามสกุล">
+       </div>
+
+       <!-- เบอร์โทร & อีเมล -->
+       <div>
+           <label class="block text-xs font-medium text-gray-700 mb-1">เบอร์โทรศัพท์ <span class="text-red-500">*</span></label> 
+           <input type="tel" id="regPhone" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="08xxxxxxxx">
+       </div>
+       <div>
+           <label class="block text-xs font-medium text-gray-700 mb-1">Email</label> 
+           <input type="email" id="regEmail" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="อีเมล">
+       </div>
+
+       <!-- หน่วยงาน (กินพื้นที่ 2 คอลัมน์) -->
+       <div class="sm:col-span-2">
+           <label class="block text-xs font-medium text-gray-700 mb-1">หน่วยงาน / องค์กร <span class="text-red-500">*</span></label> 
+           <input type="text" id="regOrganization" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="ระบุชื่อหน่วยงาน หรือ บริษัท">
+       </div>
+
+       <!-- ข้อมูลเข้าสู่ระบบ (Username & Password) -->
+       <div class="sm:col-span-2 mt-2 pt-3 border-t border-gray-100 flex items-center gap-2">
+           <i data-lucide="key" class="w-4 h-4 text-green-600"></i>
+           <span class="text-xs font-bold text-gray-800">ข้อมูลเข้าสู่ระบบ</span>
+       </div>
+       
+       <div>
+           <label class="block text-xs font-medium text-gray-700 mb-1">ชื่อผู้ใช้ (Username) <span class="text-red-500">*</span></label> 
+           <input type="text" id="regUsername" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm bg-green-50/50" placeholder="ใช้สำหรับ Login">
+       </div>
+       <div>
+           <label class="block text-xs font-medium text-gray-700 mb-1">รหัสผ่าน <span class="text-red-500">*</span></label> 
+           <input type="password" id="regPassword" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm bg-green-50/50" placeholder="อย่างน้อย 6 ตัวอักษร">
+       </div>
+
+      </div> <!-- จบ Grid -->
+
+      <!-- ส่วนที่เพิ่มใหม่: PDPA Checkbox (ย่อขนาด Padding ลง) -->
+      <div class="mb-5 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
           <label class="flex items-start gap-2 cursor-pointer">
-              <input type="checkbox" id="regPdpa" class="mt-1 w-4 h-4 text-green-600 rounded focus:ring-green-500">
-              <span class="text-sm text-gray-600 leading-relaxed">
+              <input type="checkbox" id="regPdpa" class="mt-0.5 w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500 shrink-0">
+              <span class="text-xs text-gray-600 leading-relaxed">
                   ข้าพเจ้าได้อ่านและยอมรับ 
                   <button type="button" onclick="openPdpaModal()" class="text-green-600 font-bold hover:underline">นโยบายความเป็นส่วนตัว (PDPA)</button>
               </span>
           </label>
       </div>
-		 <button onclick="handleRegister()" class="w-full btn-primary text-white py-3 rounded-xl font-medium shadow-lg shadow-green-500/30"> สมัครสมาชิก </button>
-      <p class="text-center mt-4 text-gray-500">มีบัญชีแล้ว? <button onclick="showLogin()" class="text-green-600 font-medium hover:underline">เข้าสู่ระบบ</button></p>
+
+      <button onclick="handleRegister()" class="w-full btn-primary text-white py-2.5 rounded-xl font-medium shadow-lg shadow-green-500/30 text-sm"> สมัครสมาชิก </button>
+      <p class="text-center mt-3 text-xs text-gray-500">มีบัญชีแล้ว? <button onclick="showLogin()" class="text-green-600 font-medium hover:underline">เข้าสู่ระบบ</button></p>
      </div>
     </div>
    </div>
