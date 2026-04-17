@@ -956,12 +956,16 @@ function toggleChat() {
     const chatWin = document.getElementById('chatWindow');
     const badge = document.getElementById('botBadgeCallout');
     isChatOpen = !isChatOpen;
+    
     if (isChatOpen) {
         chatWin.classList.remove('hidden');
         if(badge) badge.classList.add('hidden');
         unreadCount = 0;
         updateBotBadge();
-        if (document.getElementById('chatMessages').children.length === 0) botGreeting();
+        // ตรวจสอบว่าถ้ายังไม่มีข้อความ ให้ทักทาย
+        if (document.getElementById('chatMessages').children.length === 0) {
+            setTimeout(botGreeting, 500); 
+        }
     } else {
         chatWin.classList.add('hidden');
         if(badge) badge.classList.remove('hidden');
@@ -971,13 +975,46 @@ function toggleChat() {
 function botGreeting() {
     const welcomeMsg = systemSettings.botGreeting || "สวัสดีครับ ผม 'น้องแอร์พอร์ต' ยินดีให้บริการข้อมูลห้องรับรองพิเศษครับ มีส่วนไหนให้ผมช่วยไหมครับ?";
     appendMessage('bot', welcomeMsg);
-    renderQuickReplies(['มีกี่ห้อง?', 'ความจุแต่ละห้อง', 'จองยังไง?', 'วันไหนว่าง?', 'ติดต่อแอดมิน']);
+    renderQuickReplies([
+        'มีกี่ห้อง?', 
+        'ความจุแต่ละห้อง', 
+        'เอกสารที่ใช้', 
+        'จองล่วงหน้ากี่วัน?', 
+        'จองยังไง?', 
+        'วันไหนว่าง?', 
+        'ติดต่อแอดมิน'
+    ]);
+}
+function renderQuickReplies(buttons) {
+    const container = document.getElementById('quickReplies');
+    if (!container) return;
+    container.innerHTML = buttons.map(btn => `
+        <button onclick="sendMessage('${btn}')" 
+                class="px-3 py-1.5 border border-green-200 text-green-700 rounded-full text-xs hover:bg-green-50 transition font-medium shadow-sm bg-white">
+            ${btn}
+        </button>
+    `).join('');
 }
 
+function sendMessage(text = null) {
+    const input = document.getElementById('chatInput');
+    const msg = text || input.value.trim();
+    if (!msg) return;
+
+    appendMessage('user', msg);
+    if (!text) input.value = ''; // ล้างช่องพิมพ์ถ้าไม่ได้กดจากปุ่ม
+    
+    showBotTyping();
+    setTimeout(() => {
+        handleBotLogic(msg);
+    }, 1000);
+}
+	  
 function handleBotLogic(msg) {
+    removeBotTyping();
     const text = msg.toLowerCase();
     let reply = "";
-    let buttons = ['มีกี่ห้อง?', 'ความจุแต่ละห้อง', 'จองยังไง?', 'วันไหนว่าง?', 'ติดต่อแอดมิน'];
+    let buttons = ['มีกี่ห้อง?', 'เอกสารที่ใช้', 'จองล่วงหน้ากี่วัน?', 'จองยังไง?', 'วันไหนว่าง?', 'ติดต่อแอดมิน'];
 
     if (text.includes('ห้อง') || text.includes('กี่ห้อง')) {
         const activeRooms = allRooms.filter(r => r.status === 'active');
@@ -989,33 +1026,48 @@ function handleBotLogic(msg) {
     } else if (text.includes('ความจุ') || text.includes('คน')) {
         const activeRooms = allRooms.filter(r => r.status === 'active');
         const capList = activeRooms.map(r => `• **${r.name}**: รองรับสูงสุด ${r.capacity} คน`).join('\n');
-        reply = `ข้อมูลความจุของแต่ละห้องมีดังนี้ครับ:\n${capList}\n\n*หมายเหตุ: จำนวนคนรวม (แขก+จนท.) ไม่ควรเกินความจุที่กำหนดเพื่อความสะดวกสบายครับ*`;
-    } else if (text.includes('จองยังไง')) {
-        reply = "ขั้นตอนการจองง่ายๆ ครับ:\n1. เลือกวันที่ว่างในปฏิทิน (สีเขียว)\n2. เลือกห้องและช่วงเวลาที่ต้องการ\n3. กรอกข้อมูลและแนบไฟล์ PDF หนังสือขอใช้ห้อง\n4. รอแอดมินตรวจสอบครับ";
+        reply = `ข้อมูลความจุของแต่ละห้องมีดังนี้ครับ:\n${capList}\n\n*หมายเหตุ: จำนวนคนรวม (แขก+จนท.) ไม่ควรเกินความจุเพื่อความสะดวกสบายครับ*`;
+    } 
+    // เพิ่มเติม: ตอบเรื่องเอกสาร
+    else if (text.includes('เอกสาร')) {
+        reply = "เอกสารที่ต้องใช้คือ **'หนังสือขอความอนุเคราะห์ขอใช้ห้องรับรองพิเศษ'** ออกโดยหน่วยงานของท่าน โดยสแกนแนบไฟล์เป็น **PDF เท่านั้น** (ขนาดไม่เกิน 5MB) ในขั้นตอนการจองครับ";
+    }
+    // เพิ่มเติม: ตอบเรื่องจองล่วงหน้า
+    else if (text.includes('ล่วงหน้า')) {
+        reply = `สำหรับการจองห้องรับรอง ท่านต้องทำรายการล่วงหน้าอย่างน้อย **${systemSettings.advanceDays || 3} วัน** ครับ เพื่อให้เจ้าหน้าที่จัดเตรียมสถานที่ได้ทันเวลา`;
+    }
+    else if (text.includes('จองยังไง')) {
+        reply = "ขั้นตอนการจอง:\n1. เลือกวันที่ว่าง (สีเขียว)\n2. เลือกห้องและเวลา\n3. กรอกข้อมูลและแนบไฟล์ PDF\n4. รอแอดมินอนุมัติครับ";
     } else if (text.includes('ว่าง')) {
-        const nextDates = getAvailableDatesSummary(); // ฟังก์ชันหาเมนูวันว่างในอนาคต
-        reply = `วันที่ยังมีห้องว่างเร็วๆ นี้ได้แก่:\n${nextDates}\n\nท่านสามารถคลิกเลือกวันที่ในปฏิทินหน้าหลักได้เลยครับ`;
+        reply = `วันที่ยังมีห้องว่างเร็วๆ นี้ได้แก่:\n${getAvailableDatesSummary()}\n\nท่านคลิกเลือกในปฏิทินได้เลยครับ`;
     } else if (text.includes('ติดต่อ')) {
-        reply = `ท่านสามารถติดต่อเจ้าหน้าที่ได้ที่:\n${systemSettings.adminContactInfo || "เบอร์โทรศัพท์ของหน่วยงานในวันและเวลาราชการครับ"}`;
+        reply = `ติดต่อเจ้าหน้าที่ได้ที่:\n${systemSettings.adminContactInfo || "เบอร์โทรศัพท์หน่วยงานในวันและเวลาราชการครับ"}`;
     } else {
-        reply = "ขออภัยครับ ผมยังไม่แน่ใจคำถามนี้ ท่านต้องการให้ผมช่วยเรื่องห้องรับรอง ความจุ หรือขั้นตอนการจองดีครับ?";
+        reply = "ขออภัยครับ ผมยังไม่แน่ใจคำถามนี้ ท่านต้องการทราบเรื่อง 'ห้องรับรอง', 'เอกสารที่ใช้' หรือ 'การจองล่วงหน้า' ดีครับ?";
     }
 
-    setTimeout(() => {
-        removeBotTyping();
-        appendMessage('bot', reply);
-        renderQuickReplies(buttons);
-    }, 1000);
+    appendMessage('bot', reply);
+    renderQuickReplies(buttons);
 }
 
+function updateBotBadge() {
+    const badge = document.getElementById('botNotifyBadge');
+    if (unreadCount > 0) {
+        badge.textContent = unreadCount;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
 // --- ฟังก์ชันแสดงข้อความในแชท ---
 function appendMessage(sender, text) {
     const container = document.getElementById('chatMessages');
     const div = document.createElement('div');
-    // ปรับสี bubble: บอทสีขาว(ขอบเขียว) / ยูสเซอร์สีเขียว
     div.className = sender === 'bot' ? 'bot-msg flex items-start gap-2' : 'user-msg flex flex-row-reverse items-start gap-2';
     
-    const avatar = sender === 'bot' ? `<div class="w-8 h-8 rounded-full bg-green-100 p-1 shrink-0 border border-green-200"><img src="${systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png'}" class="w-full h-full object-contain"></div>` : '';
+    // บัคแก้ไข: ถ้าไม่มีลิงก์รูปให้ใช้รูปเริ่มต้น
+    const avatarImg = systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png';
+    const avatar = sender === 'bot' ? `<div class="w-8 h-8 rounded-full bg-green-100 p-1 shrink-0 border border-green-200"><img src="${avatarImg}" class="w-full h-full object-contain"></div>` : '';
     
     div.innerHTML = `
         ${avatar}
@@ -1024,10 +1076,10 @@ function appendMessage(sender, text) {
         </div>
     `;
     container.appendChild(div);
-    container.scrollTop = container.scrollHeight; // เลื่อนลงล่างสุด
+    container.scrollTop = container.scrollHeight;
 
     if (sender === 'bot') {
-        document.getElementById('botSound').play().catch(()=>{}); // เล่นเสียง
+        document.getElementById('botSound').play().catch(()=>{});
         if (!isChatOpen) {
             unreadCount++;
             updateBotBadge();
@@ -1037,14 +1089,13 @@ function appendMessage(sender, text) {
 
 // --- ฟังก์ชันแสดงจุดไข่ปลา (บอทกำลังพิมพ์) ---
 function showBotTyping() { 
-    removeBotTyping(); // ลบของเก่าก่อนถ้ามี
+    removeBotTyping();
     const div = document.createElement('div');
     div.id = 'botTyping';
     div.className = 'bot-msg flex items-start gap-2';
+    const avatarImg = systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png';
     div.innerHTML = `
-        <div class="w-8 h-8 rounded-full bg-green-100 p-1 shrink-0 border border-green-200">
-            <img src="${systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png'}" class="w-full h-full object-contain">
-        </div>
+        <div class="w-8 h-8 rounded-full bg-green-100 p-1 shrink-0 border border-green-200"><img src="${avatarImg}" class="w-full h-full object-contain"></div>
         <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex gap-1">
             <span class="w-1.5 h-1.5 bg-green-300 rounded-full animate-bounce"></span>
             <span class="w-1.5 h-1.5 bg-green-300 rounded-full animate-bounce [animation-delay:0.2s]"></span>
@@ -1062,12 +1113,15 @@ function removeBotTyping() {
 // --- อัปเดตหน้าตาบอทตามการตั้งค่า ---
 function updateBotUI() {
     const botContainer = document.getElementById('chatbotContainer');
+    if (!botContainer) return;
+    
     if (systemSettings.botEnabled === false) {
         botContainer.classList.add('hidden');
     } else {
         botContainer.classList.remove('hidden');
-        document.getElementById('botAvatarImg').src = systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png';
-        document.getElementById('botHeaderImg').src = systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png';
+        const imgPath = systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png';
+        document.getElementById('botAvatarImg').src = imgPath;
+        document.getElementById('botHeaderImg').src = imgPath;
         document.getElementById('botNameTitle').textContent = systemSettings.botName || 'น้องแอร์พอร์ต';
         document.getElementById('botBadgeTextDisplay').textContent = systemSettings.botBadgeText || 'สอบถามข้อมูลห้องรับรองที่นี่';
     }
@@ -1217,7 +1271,9 @@ function getAvailableDatesSummary() {
         document.getElementById('loginTitle').textContent = systemSettings.systemName || 'ระบบจองห้องรับรองพิเศษ';
         document.getElementById('loginSubTitle').textContent = systemSettings.systemSubName || 'เข้าสู่ระบบ';
         document.getElementById('footerContent').textContent = systemSettings.footerText || '';
-        
+
+	updateBotUI();
+		
         const logo = systemSettings.logoUrl;
         ['login', 'header'].forEach(p => {
             const di = document.getElementById(`${p}DefaultIcon`), cl = document.getElementById(`${p}CustomLogo`);
@@ -2417,7 +2473,7 @@ function getAvailableDatesSummary() {
         systemSettings.faviconUrl = document.getElementById('faviconUrl').value;
 		systemSettings.pdpaText = document.getElementById('settingPdpaText').value;
 
-		   // รวบรวมข้อมูล Chatbot (ที่เพิ่มใหม่)
+	 // รวบรวมข้อมูล Chatbot
     systemSettings.botEnabled = document.getElementById('botEnabled').checked;
     systemSettings.botName = document.getElementById('botName').value;
     systemSettings.botAvatar = document.getElementById('botAvatar').value;
