@@ -36,6 +36,29 @@
     .time-slot-label { transition: all 0.2s; }
     .time-slot-checkbox:checked + .time-slot-label { background-color: #dcfce7; border-color: #22c55e; color: #16a34a; font-weight: 600; }
     .time-slot-checkbox:disabled + .time-slot-label { background-color: #f3f4f6; border-color: #e5e7eb; color: #9ca3af; cursor: not-allowed; text-decoration: line-through;}
+  
+	  /* Chatbot Custom Styles */
+#chatMessages::-webkit-scrollbar { width: 4px; }
+#chatMessages::-webkit-scrollbar-thumb { background: #dcfce7; border-radius: 10px; }
+.bot-msg { animation: chatSlideIn 0.3s ease-out; }
+.user-msg { animation: chatSlideInRight 0.3s ease-out; }
+@keyframes chatSlideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes chatSlideInRight { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+#botBadgeCallout {
+    background: #16a34a; /* Green 600 */
+    box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4);
+}
+#botBadgeCallout::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: -8px;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 10px solid #16a34a;
+}
   </style>
 </head>
 <body class="h-full bg-gray-50">
@@ -499,6 +522,50 @@
            </div>
        </div>
 
+		<!-- Admin Bot Settings -->
+<div class="bg-white rounded-xl card-shadow p-6 mt-6">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="font-semibold flex items-center gap-2 text-green-600">
+            <i data-lucide="bot" class="w-6 h-6"></i> ตั้งค่าน้องแอร์พอร์ต (Chatbot)
+        </h3>
+        <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="botEnabled" class="sr-only peer" onchange="toggleBotStatus()">
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-green-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+            <span class="ml-3 text-sm font-medium text-gray-700">เปิดใช้งานบอท</span>
+        </label>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อของบอท</label>
+                <input type="text" id="botName" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">ข้อความบนป้ายทักทาย</label>
+                <input type="text" id="botBadgeText" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">ลิงก์รูปบอท (Avatar)</label>
+                <input type="url" id="botAvatar" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">ข้อความทักทายเริ่มต้น</label>
+                <textarea id="botGreeting" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-green-500 min-h-[80px]"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-orange-600 mb-1 flex items-center gap-1">
+                    <i data-lucide="phone-call" class="w-4 h-4"></i> ข้อมูลติดต่อแอดมิน
+                </label>
+                <textarea id="adminContactInfo" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 min-h-[80px]"></textarea>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
        <div class="sticky bottom-4 z-40 bg-white/90 backdrop-blur p-4 rounded-xl shadow-lg border border-green-100 flex justify-end">
            <button onclick="saveAllSettings()" class="btn-primary text-white px-8 py-3 rounded-xl shadow-lg font-bold text-lg flex items-center gap-2"><i data-lucide="save" class="w-5 h-5"></i> บันทึกการตั้งค่าทั้งหมด</button>
        </div>
@@ -821,6 +888,46 @@
         </div>
     </div>
    </div>
+
+	  <!-- --- CHATBOT UI --- -->
+<div id="chatbotContainer" class="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+    <!-- ป้าย Badge ทักทาย -->
+    <div id="botBadgeCallout" class="absolute bottom-4 right-20 mr-2 text-white px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap animate-pulse cursor-pointer transition hover:scale-105" onclick="toggleChat()">
+        <span id="botBadgeTextDisplay">สอบถามข้อมูลห้องรับรองที่นี่</span>
+    </div>
+
+    <!-- ปุ่มเปิด/ปิดแชท -->
+    <button onclick="toggleChat()" class="relative group transition-transform hover:scale-110 active:scale-95 shadow-2xl rounded-full">
+        <div class="w-16 h-16 rounded-full bg-white border-4 border-green-500 overflow-hidden relative z-10">
+            <img id="botAvatarImg" src="https://img5.pic.in.th/file/secure-sv1/pilot-character.png" class="w-full h-full object-cover">
+        </div>
+        <span id="botNotifyBadge" class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white flex items-center justify-center z-20 hidden">1</span>
+    </button>
+
+    <!-- หน้าต่างแชท -->
+    <div id="chatWindow" class="hidden absolute bottom-20 right-0 w-[320px] sm:w-[380px] h-[520px] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-gray-100 animate-fadeIn">
+        <div class="gradient-header p-4 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-white/20 p-1">
+                    <img id="botHeaderImg" src="https://img5.pic.in.th/file/secure-sv1/pilot-character.png" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <p id="botNameTitle" class="font-bold text-sm">น้องแอร์พอร์ต</p>
+                    <p class="text-[10px] text-green-100">ผู้ช่วยจัดการห้องรับรองพิเศษ</p>
+                </div>
+            </div>
+            <button onclick="toggleChat()" class="p-1 hover:bg-white/20 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50"></div>
+        <div id="quickReplies" class="px-4 py-2 flex flex-wrap gap-2 bg-white border-t border-gray-50"></div>
+        <div class="p-4 bg-white border-t border-gray-100 flex gap-2">
+            <input type="text" id="chatInput" onkeypress="if(event.key==='Enter') sendMessage()" placeholder="พิมพ์คำถามของคุณ..." class="flex-1 px-4 py-2 bg-gray-100 rounded-xl text-sm outline-none">
+            <button onclick="sendMessage()" class="p-2 bg-green-600 text-white rounded-xl"><i data-lucide="send" class="w-5 h-5"></i></button>
+        </div>
+    </div>
+</div>
+<!-- เสียงแจ้งเตือน -->
+<audio id="botSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
   </div>
 
   <script>
@@ -841,6 +948,149 @@
     const thaiMonthsNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
     const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
+//////////////////////// ฟังชั่นบอท
+let isChatOpen = false;
+let unreadCount = 0;
+
+function toggleChat() {
+    const chatWin = document.getElementById('chatWindow');
+    const badge = document.getElementById('botBadgeCallout');
+    isChatOpen = !isChatOpen;
+    if (isChatOpen) {
+        chatWin.classList.remove('hidden');
+        if(badge) badge.classList.add('hidden');
+        unreadCount = 0;
+        updateBotBadge();
+        if (document.getElementById('chatMessages').children.length === 0) botGreeting();
+    } else {
+        chatWin.classList.add('hidden');
+        if(badge) badge.classList.remove('hidden');
+    }
+}
+
+function botGreeting() {
+    const welcomeMsg = systemSettings.botGreeting || "สวัสดีครับ ผม 'น้องแอร์พอร์ต' ยินดีให้บริการข้อมูลห้องรับรองพิเศษครับ มีส่วนไหนให้ผมช่วยไหมครับ?";
+    appendMessage('bot', welcomeMsg);
+    renderQuickReplies(['มีกี่ห้อง?', 'ความจุแต่ละห้อง', 'จองยังไง?', 'วันไหนว่าง?', 'ติดต่อแอดมิน']);
+}
+
+function handleBotLogic(msg) {
+    const text = msg.toLowerCase();
+    let reply = "";
+    let buttons = ['มีกี่ห้อง?', 'ความจุแต่ละห้อง', 'จองยังไง?', 'วันไหนว่าง?', 'ติดต่อแอดมิน'];
+
+    if (text.includes('ห้อง') || text.includes('กี่ห้อง')) {
+        const activeRooms = allRooms.filter(r => r.status === 'active');
+        if (activeRooms.length === 0) reply = "ปัจจุบันยังไม่มีห้องรับรองเปิดให้บริการในระบบครับ";
+        else {
+            const list = activeRooms.map(r => `📍 **${r.name}**\n   - ${r.location || 'ไม่ระบุสถานที่'}\n   - สิ่งอำนวยความสะดวก: ${r.amenities || '-'}`).join('\n\n');
+            reply = `ตอนนี้เรามีห้องรับรองเปิดให้บริการ ${activeRooms.length} ห้องครับ:\n\n${list}`;
+        }
+    } else if (text.includes('ความจุ') || text.includes('คน')) {
+        const activeRooms = allRooms.filter(r => r.status === 'active');
+        const capList = activeRooms.map(r => `• **${r.name}**: รองรับสูงสุด ${r.capacity} คน`).join('\n');
+        reply = `ข้อมูลความจุของแต่ละห้องมีดังนี้ครับ:\n${capList}\n\n*หมายเหตุ: จำนวนคนรวม (แขก+จนท.) ไม่ควรเกินความจุที่กำหนดเพื่อความสะดวกสบายครับ*`;
+    } else if (text.includes('จองยังไง')) {
+        reply = "ขั้นตอนการจองง่ายๆ ครับ:\n1. เลือกวันที่ว่างในปฏิทิน (สีเขียว)\n2. เลือกห้องและช่วงเวลาที่ต้องการ\n3. กรอกข้อมูลและแนบไฟล์ PDF หนังสือขอใช้ห้อง\n4. รอแอดมินตรวจสอบครับ";
+    } else if (text.includes('ว่าง')) {
+        const nextDates = getAvailableDatesSummary(); // ฟังก์ชันหาเมนูวันว่างในอนาคต
+        reply = `วันที่ยังมีห้องว่างเร็วๆ นี้ได้แก่:\n${nextDates}\n\nท่านสามารถคลิกเลือกวันที่ในปฏิทินหน้าหลักได้เลยครับ`;
+    } else if (text.includes('ติดต่อ')) {
+        reply = `ท่านสามารถติดต่อเจ้าหน้าที่ได้ที่:\n${systemSettings.adminContactInfo || "เบอร์โทรศัพท์ของหน่วยงานในวันและเวลาราชการครับ"}`;
+    } else {
+        reply = "ขออภัยครับ ผมยังไม่แน่ใจคำถามนี้ ท่านต้องการให้ผมช่วยเรื่องห้องรับรอง ความจุ หรือขั้นตอนการจองดีครับ?";
+    }
+
+    setTimeout(() => {
+        removeBotTyping();
+        appendMessage('bot', reply);
+        renderQuickReplies(buttons);
+    }, 1000);
+}
+
+// --- ฟังก์ชันแสดงข้อความในแชท ---
+function appendMessage(sender, text) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    // ปรับสี bubble: บอทสีขาว(ขอบเขียว) / ยูสเซอร์สีเขียว
+    div.className = sender === 'bot' ? 'bot-msg flex items-start gap-2' : 'user-msg flex flex-row-reverse items-start gap-2';
+    
+    const avatar = sender === 'bot' ? `<div class="w-8 h-8 rounded-full bg-green-100 p-1 shrink-0 border border-green-200"><img src="${systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png'}" class="w-full h-full object-contain"></div>` : '';
+    
+    div.innerHTML = `
+        ${avatar}
+        <div class="max-w-[80%] ${sender === 'bot' ? 'bg-white text-gray-800 rounded-tr-2xl rounded-br-2xl rounded-bl-2xl shadow-sm border border-gray-100' : 'bg-green-600 text-white rounded-tl-2xl rounded-bl-2xl rounded-br-2xl'} p-3 text-sm whitespace-pre-line leading-relaxed">
+            ${text}
+        </div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight; // เลื่อนลงล่างสุด
+
+    if (sender === 'bot') {
+        document.getElementById('botSound').play().catch(()=>{}); // เล่นเสียง
+        if (!isChatOpen) {
+            unreadCount++;
+            updateBotBadge();
+        }
+    }
+}
+
+// --- ฟังก์ชันแสดงจุดไข่ปลา (บอทกำลังพิมพ์) ---
+function showBotTyping() { 
+    removeBotTyping(); // ลบของเก่าก่อนถ้ามี
+    const div = document.createElement('div');
+    div.id = 'botTyping';
+    div.className = 'bot-msg flex items-start gap-2';
+    div.innerHTML = `
+        <div class="w-8 h-8 rounded-full bg-green-100 p-1 shrink-0 border border-green-200">
+            <img src="${systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png'}" class="w-full h-full object-contain">
+        </div>
+        <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex gap-1">
+            <span class="w-1.5 h-1.5 bg-green-300 rounded-full animate-bounce"></span>
+            <span class="w-1.5 h-1.5 bg-green-300 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+            <span class="w-1.5 h-1.5 bg-green-300 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+        </div>`;
+    document.getElementById('chatMessages').appendChild(div);
+    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+}
+
+function removeBotTyping() { 
+    const el = document.getElementById('botTyping'); 
+    if(el) el.remove(); 
+}
+
+// --- อัปเดตหน้าตาบอทตามการตั้งค่า ---
+function updateBotUI() {
+    const botContainer = document.getElementById('chatbotContainer');
+    if (systemSettings.botEnabled === false) {
+        botContainer.classList.add('hidden');
+    } else {
+        botContainer.classList.remove('hidden');
+        document.getElementById('botAvatarImg').src = systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png';
+        document.getElementById('botHeaderImg').src = systemSettings.botAvatar || 'https://img5.pic.in.th/file/secure-sv1/pilot-character.png';
+        document.getElementById('botNameTitle').textContent = systemSettings.botName || 'น้องแอร์พอร์ต';
+        document.getElementById('botBadgeTextDisplay').textContent = systemSettings.botBadgeText || 'สอบถามข้อมูลห้องรับรองที่นี่';
+    }
+}
+
+// ฟังก์ชันช่วยดึงวันว่าง (ใช้ใน Bot Logic)
+function getAvailableDatesSummary() {
+    const today = new Date();
+    const future = new Date();
+    future.setMonth(today.getMonth() + 1);
+    let available = [];
+    for (let d = new Date(today); d <= future; d.setDate(d.getDate() + 1)) {
+        const ds = d.toISOString().split('T')[0];
+        // reuse ฟังก์ชัน getDayStatus ที่ระบบเดิมมีอยู่แล้ว
+        if (typeof getDayStatus === "function" && getDayStatus(new Date(d), ds) === 'available') {
+            available.push("📅 " + formatThaiDate(new Date(d)));
+            if (available.length >= 3) break;
+        }
+    }
+    return available.length > 0 ? available.join('\n') : "ขออภัยครับ ช่วงนี้ยังไม่มีวันว่างครับ";
+}
+	  
+////////////////////////ปิดฟังชั่นบอท
 // --- Helper: ฟังก์ชันสำหรับเรียงลำดับข้อมูล ---
     function sortBookingArray(arr, sortType) {
         return arr.sort((a, b) => {
@@ -2049,6 +2299,14 @@
         document.getElementById('loginBgUrl').value = systemSettings.loginBgUrl || '';
         document.getElementById('faviconUrl').value = systemSettings.faviconUrl || '';
 		document.getElementById('settingPdpaText').value = systemSettings.pdpaText || '';
+
+		// 2. ตั้งค่าบอท (ที่เพิ่มใหม่)
+    document.getElementById('botEnabled').checked = systemSettings.botEnabled !== false;
+    document.getElementById('botName').value = systemSettings.botName || 'น้องแอร์พอร์ต';
+    document.getElementById('botAvatar').value = systemSettings.botAvatar || '';
+    document.getElementById('botBadgeText').value = systemSettings.botBadgeText || 'สอบถามข้อมูลห้องรับรองที่นี่';
+    document.getElementById('botGreeting').value = systemSettings.botGreeting || '';
+    document.getElementById('adminContactInfo').value = systemSettings.adminContactInfo || '';
 		
         
         document.querySelector(`input[name="bookingDayType"][value="${systemSettings.bookingDayType}"]`).checked = true;
@@ -2159,8 +2417,20 @@
         systemSettings.faviconUrl = document.getElementById('faviconUrl').value;
 		systemSettings.pdpaText = document.getElementById('settingPdpaText').value;
 
+		   // รวบรวมข้อมูล Chatbot (ที่เพิ่มใหม่)
+    systemSettings.botEnabled = document.getElementById('botEnabled').checked;
+    systemSettings.botName = document.getElementById('botName').value;
+    systemSettings.botAvatar = document.getElementById('botAvatar').value;
+    systemSettings.botBadgeText = document.getElementById('botBadgeText').value;
+    systemSettings.botGreeting = document.getElementById('botGreeting').value;
+    systemSettings.adminContactInfo = document.getElementById('adminContactInfo').value;
+
         await apiCall('saveSettings', systemSettings);
-        applySettingsToUI(); renderCalendar(); initBanner();
+         // อัปเดต UI ทันทีไม่ต้องรีโหลด
+    applySettingsToUI(); // ฟังก์ชันเปลี่ยนโลโก้/ชื่อระบบเดิม
+    updateBotUI();       // อัปเดตหน้าตาบอท
+    renderCalendar();    // อัปเดตปฏิทิน
+    initBanner();        // รีสตาร์ทแบนเนอร์
         showToast('บันทึกการตั้งค่าระบบเรียบร้อย', 'success');
     }
 // --- Room Gallery Logic ---
