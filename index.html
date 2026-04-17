@@ -1016,11 +1016,11 @@ function handleBotLogic(msg) {
     let reply = "";
     let buttons = ['มีกี่ห้อง?', 'เอกสารที่ใช้', 'จองล่วงหน้ากี่วัน?', 'จองยังไง?', 'วันไหนว่าง?', 'ติดต่อแอดมิน'];
 
-     if (text.includes('ห้อง') || text.includes('กี่ห้อง')) {
+    if (text.includes('ห้อง') || text.includes('กี่ห้อง')) {
         const activeRooms = allRooms.filter(r => r.status === 'active');
-        if (activeRooms.length === 0) reply = "ปัจจุบันยังไม่มีห้องรับรองเปิดให้บริการในระบบครับ";
-        else {
-            // แก้ไข: เพิ่มข้อมูลความจุ (capacity) ลงไปในบรรทัดนี้
+        if (activeRooms.length === 0) {
+            reply = "ปัจจุบันยังไม่มีห้องรับรองเปิดให้บริการในระบบครับ";
+        } else {
             const list = activeRooms.map(r => `📍 **${r.name}**\n   - **รองรับสูงสุด: ${r.capacity} คน**\n   - สถานที่: ${r.location || 'ไม่ระบุสถานที่'}\n   - สิ่งอำนวยความสะดวก: ${r.amenities || '-'}`).join('\n\n');
             reply = `ตอนนี้เรามีห้องรับรองเปิดให้บริการ ${activeRooms.length} ห้องครับ:\n\n${list}`;
         }
@@ -1028,23 +1028,18 @@ function handleBotLogic(msg) {
         const activeRooms = allRooms.filter(r => r.status === 'active');
         const capList = activeRooms.map(r => `• **${r.name}**: รองรับสูงสุด ${r.capacity} คน`).join('\n');
         reply = `ข้อมูลความจุของแต่ละห้องมีดังนี้ครับ:\n${capList}\n\n*หมายเหตุ: จำนวนคนรวม (แขก+จนท.) ไม่ควรเกินความจุเพื่อความสะดวกสบายครับ*`;
-    } 
-    // เพิ่มเติม: ตอบเรื่องเอกสาร
-    else if (text.includes('เอกสาร')) {
+    } else if (text.includes('เอกสาร')) {
         reply = "เอกสารที่ต้องใช้คือ **'หนังสือขอความอนุเคราะห์ขอใช้ห้องรับรองพิเศษ'** ออกโดยหน่วยงานของท่าน โดยสแกนแนบไฟล์เป็น **PDF เท่านั้น** (ขนาดไม่เกิน 5MB) ในขั้นตอนการจองครับ";
-    }
-    // เพิ่มเติม: ตอบเรื่องจองล่วงหน้า
-    else if (text.includes('ล่วงหน้า')) {
+    } else if (text.includes('ล่วงหน้า')) {
         reply = `สำหรับการจองห้องรับรอง ท่านต้องทำรายการล่วงหน้าอย่างน้อย **${systemSettings.advanceDays || 3} วัน** ครับ เพื่อให้เจ้าหน้าที่จัดเตรียมสถานที่ได้ทันเวลา`;
-    }
-    else if (text.includes('จองยังไง')) {
+    } else if (text.includes('จองยังไง') || text.includes('จอง')) {
         reply = "ขั้นตอนการจอง:\n1. เลือกวันที่ว่าง (สีเขียว)\n2. เลือกห้องและเวลา\n3. กรอกข้อมูลและแนบไฟล์ PDF\n4. รอแอดมินอนุมัติครับ";
     } else if (text.includes('ว่าง') || text.includes('วันว่าง')) {
-        reply = `วันที่ยังมีห้องว่างเร็วๆ นี้ได้แก่:\n${getAvailableDatesSummary()}\n\nท่านคลิกเลือกในปฏิทินได้เลยครับ`;
-	} else if (text.includes('ขอบคุณ') || text.includes('thank you') || text.includes('ty')) {
+        const nextDates = getAvailableDatesSummary();
+        reply = `วันที่ยังมีห้องว่างเร็วๆ นี้ได้แก่:\n${nextDates}\n\nท่านคลิกเลือกในปฏิทินได้เลยครับ`;
+    } else if (text.includes('ขอบคุณ') || text.includes('thank you') || text.includes('ty')) {
         reply = `น้องแอร์พอร์ตยินดีครับ มีเรื่องไหนสงสัยสามารถสอบถามเพิ่มเติมได้เลยครับ`;
-    
-    } else if (text.includes('ติดต่อ')) {
+    } else if (text.includes('ติดต่อ') || text.includes('คุยกับคน')) {
         reply = `ติดต่อเจ้าหน้าที่ได้ที่:\n${systemSettings.adminContactInfo || "เบอร์โทรศัพท์หน่วยงานในวันและเวลาราชการครับ"}`;
     } else {
         reply = "ขออภัยครับ ผมยังไม่แน่ใจคำถามนี้ ท่านต้องการทราบเรื่อง 'ห้องรับรอง', 'เอกสารที่ใช้' หรือ 'การจองล่วงหน้า' ดีครับ?";
@@ -1142,14 +1137,12 @@ function getAvailableDatesSummary() {
     let activeRooms = allRooms.filter(r => r.status === 'active');
     let totalDailySlots = activeRooms.length * (systemSettings.timeSlots || []).length;
 
-    // ถ้าไม่มีห้องหรือเวลา บอทจะแจ้งทันที
     if (totalDailySlots === 0) return "❌ ขออภัยครับ ยังไม่ได้ตั้งค่าห้องหรือเวลาเข้าใช้";
 
     for (let d = new Date(today); d <= future; d.setDate(d.getDate() + 1)) {
-        const ds = formatDate(d); // ใช้ฟังก์ชัน formatDate ที่มีอยู่ในระบบ
-        
-        // 1. ตรวจสอบวันเปิดทำการ (ตรรกะเดียวกับ renderCalendar)
+        const ds = formatDate(d);
         let isOpen = false;
+
         if (systemSettings.bookingDayType === 'weekly') {
             isOpen = (systemSettings.weeklyDays || []).includes(d.getDay());
         } else {
@@ -1157,23 +1150,21 @@ function getAvailableDatesSummary() {
             isOpen = (systemSettings.customDays[monthKey] || []).includes(ds);
         }
 
-        // 2. ตรวจสอบระยะเวลาจองล่วงหน้า (สำหรับ User)
+        // เช็ควันจองล่วงหน้า
         const minD = new Date(today);
         minD.setDate(minD.getDate() + parseInt(systemSettings.advanceDays || 0));
         if (d < minD) isOpen = false;
 
         if (isOpen) {
-            // 3. ตรวจสอบว่าคิวเต็มหรือยัง
             let dayBookings = allBookings.filter(b => b.date === ds && b.status !== 'rejected');
             let bookedSlotsCount = 0;
             dayBookings.forEach(b => {
                 try { bookedSlotsCount += JSON.parse(b.timeSlots).length; } catch (e) {}
             });
 
-            // ถ้าจำนวน slot ที่จองไป น้อยกว่า slot ทั้งหมดที่มี
             if (bookedSlotsCount < totalDailySlots) {
                 available.push("🟢 " + formatThaiDate(new Date(d)));
-                if (available.length >= 3) break; // เอาแค่ 3 วันที่ใกล้ที่สุด
+                if (available.length >= 3) break;
             }
         }
     }
