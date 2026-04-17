@@ -1016,11 +1016,12 @@ function handleBotLogic(msg) {
     let reply = "";
     let buttons = ['มีกี่ห้อง?', 'เอกสารที่ใช้', 'จองล่วงหน้ากี่วัน?', 'จองยังไง?', 'วันไหนว่าง?', 'ติดต่อแอดมิน'];
 
-    if (text.includes('ห้อง') || text.includes('กี่ห้อง')) {
+     if (text.includes('ห้อง') || text.includes('กี่ห้อง')) {
         const activeRooms = allRooms.filter(r => r.status === 'active');
         if (activeRooms.length === 0) reply = "ปัจจุบันยังไม่มีห้องรับรองเปิดให้บริการในระบบครับ";
         else {
-            const list = activeRooms.map(r => `📍 **${r.name}**\n   - ${r.location || 'ไม่ระบุสถานที่'}\n   - สิ่งอำนวยความสะดวก: ${r.amenities || '-'}`).join('\n\n');
+            // แก้ไข: เพิ่มข้อมูลความจุ (capacity) ลงไปในบรรทัดนี้
+            const list = activeRooms.map(r => `📍 **${r.name}**\n   - **รองรับสูงสุด: ${r.capacity} คน**\n   - สถานที่: ${r.location || 'ไม่ระบุสถานที่'}\n   - สิ่งอำนวยความสะดวก: ${r.amenities || '-'}`).join('\n\n');
             reply = `ตอนนี้เรามีห้องรับรองเปิดให้บริการ ${activeRooms.length} ห้องครับ:\n\n${list}`;
         }
     } else if (text.includes('ความจุ') || text.includes('คน')) {
@@ -1038,8 +1039,11 @@ function handleBotLogic(msg) {
     }
     else if (text.includes('จองยังไง')) {
         reply = "ขั้นตอนการจอง:\n1. เลือกวันที่ว่าง (สีเขียว)\n2. เลือกห้องและเวลา\n3. กรอกข้อมูลและแนบไฟล์ PDF\n4. รอแอดมินอนุมัติครับ";
-    } else if (text.includes('ว่าง')) {
+    } else if (text.includes('ว่าง') || text.includes('วันว่าง')) {
         reply = `วันที่ยังมีห้องว่างเร็วๆ นี้ได้แก่:\n${getAvailableDatesSummary()}\n\nท่านคลิกเลือกในปฏิทินได้เลยครับ`;
+	} else if (text.includes('ขอบคุณ') || text.includes('thank you') || text.includes('ty')) {
+        reply = `น้องแอร์พอร์ตยินดีครับ มีเรื่องไหนสงสัยสามารถสอบถามเพิ่มเติมได้เลยครับ`;
+    }
     } else if (text.includes('ติดต่อ')) {
         reply = `ติดต่อเจ้าหน้าที่ได้ที่:\n${systemSettings.adminContactInfo || "เบอร์โทรศัพท์หน่วยงานในวันและเวลาราชการครับ"}`;
     } else {
@@ -1130,18 +1134,50 @@ function updateBotUI() {
 // ฟังก์ชันช่วยดึงวันว่าง (ใช้ใน Bot Logic)
 function getAvailableDatesSummary() {
     const today = new Date();
+    today.setHours(0,0,0,0);
     const future = new Date();
-    future.setMonth(today.getMonth() + 1);
+    future.setMonth(today.getMonth() + 2); // ตรวจสอบล่วงหน้า 2 เดือน
+
     let available = [];
+    let activeRooms = allRooms.filter(r => r.status === 'active');
+    let totalDailySlots = activeRooms.length * (systemSettings.timeSlots || []).length;
+
+    // ถ้าไม่มีห้องหรือเวลา บอทจะแจ้งทันที
+    if (totalDailySlots === 0) return "❌ ขออภัยครับ ยังไม่ได้ตั้งค่าห้องหรือเวลาเข้าใช้";
+
     for (let d = new Date(today); d <= future; d.setDate(d.getDate() + 1)) {
-        const ds = d.toISOString().split('T')[0];
-        // reuse ฟังก์ชัน getDayStatus ที่ระบบเดิมมีอยู่แล้ว
-        if (typeof getDayStatus === "function" && getDayStatus(new Date(d), ds) === 'available') {
-            available.push("📅 " + formatThaiDate(new Date(d)));
-            if (available.length >= 3) break;
+        const ds = formatDate(d); // ใช้ฟังก์ชัน formatDate ที่มีอยู่ในระบบ
+        
+        // 1. ตรวจสอบวันเปิดทำการ (ตรรกะเดียวกับ renderCalendar)
+        let isOpen = false;
+        if (systemSettings.bookingDayType === 'weekly') {
+            isOpen = (systemSettings.weeklyDays || []).includes(d.getDay());
+        } else {
+            const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            isOpen = (systemSettings.customDays[monthKey] || []).includes(ds);
+        }
+
+        // 2. ตรวจสอบระยะเวลาจองล่วงหน้า (สำหรับ User)
+        const minD = new Date(today);
+        minD.setDate(minD.getDate() + parseInt(systemSettings.advanceDays || 0));
+        if (d < minD) isOpen = false;
+
+        if (isOpen) {
+            // 3. ตรวจสอบว่าคิวเต็มหรือยัง
+            let dayBookings = allBookings.filter(b => b.date === ds && b.status !== 'rejected');
+            let bookedSlotsCount = 0;
+            dayBookings.forEach(b => {
+                try { bookedSlotsCount += JSON.parse(b.timeSlots).length; } catch (e) {}
+            });
+
+            // ถ้าจำนวน slot ที่จองไป น้อยกว่า slot ทั้งหมดที่มี
+            if (bookedSlotsCount < totalDailySlots) {
+                available.push("🟢 " + formatThaiDate(new Date(d)));
+                if (available.length >= 3) break; // เอาแค่ 3 วันที่ใกล้ที่สุด
+            }
         }
     }
-    return available.length > 0 ? available.join('\n') : "ขออภัยครับ ช่วงนี้ยังไม่มีวันว่างครับ";
+    return available.length > 0 ? available.join('\n') : "ขออภัยครับ ช่วงนี้ยังไม่มีวันว่างที่สามารถจองได้ครับ";
 }
 	  
 ////////////////////////ปิดฟังชั่นบอท
