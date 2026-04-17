@@ -1043,7 +1043,7 @@ function handleBotLogic(msg) {
         reply = `วันที่ยังมีห้องว่างเร็วๆ นี้ได้แก่:\n${getAvailableDatesSummary()}\n\nท่านคลิกเลือกในปฏิทินได้เลยครับ`;
 	} else if (text.includes('ขอบคุณ') || text.includes('thank you') || text.includes('ty')) {
         reply = `น้องแอร์พอร์ตยินดีครับ มีเรื่องไหนสงสัยสามารถสอบถามเพิ่มเติมได้เลยครับ`;
-    }
+    
     } else if (text.includes('ติดต่อ')) {
         reply = `ติดต่อเจ้าหน้าที่ได้ที่:\n${systemSettings.adminContactInfo || "เบอร์โทรศัพท์หน่วยงานในวันและเวลาราชการครับ"}`;
     } else {
