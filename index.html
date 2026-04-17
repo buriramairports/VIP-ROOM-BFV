@@ -1016,13 +1016,49 @@ function handleBotLogic(msg) {
     let reply = "";
     let buttons = ['มีกี่ห้อง?', 'เอกสารที่ใช้', 'จองล่วงหน้ากี่วัน?', 'จองยังไง?', 'วันไหนว่าง?', 'ติดต่อแอดมิน'];
 
-    if (text.includes('ห้อง') || text.includes('กี่ห้อง')) {
+    if (text.includes('ห้อง') || text.includes('กี่ห้อง') || text.includes('ข้อมูลห้อง')) {
         const activeRooms = allRooms.filter(r => r.status === 'active');
         if (activeRooms.length === 0) {
             reply = "ปัจจุบันยังไม่มีห้องรับรองเปิดให้บริการในระบบครับ";
         } else {
-            const list = activeRooms.map(r => `📍 **${r.name}**\n   - **รองรับสูงสุด: ${r.capacity} คน**\n   - สถานที่: ${r.location || 'ไม่ระบุสถานที่'}\n   - สิ่งอำนวยความสะดวก: ${r.amenities || '-'}`).join('\n\n');
-            reply = `ตอนนี้เรามีห้องรับรองเปิดให้บริการ ${activeRooms.length} ห้องครับ:\n\n${list}`;
+            reply = `<p class="mb-3 font-semibold text-green-800">ปัจจุบันมีห้องรับรองเปิดให้บริการ ${activeRooms.length} ห้อง ดังนี้ครับ:</p>`;
+            
+            activeRooms.forEach(r => {
+                // ดึงรูปภาพแรกของห้องมาแสดง
+                let imgHtml = "";
+                try {
+                    const imgs = JSON.parse(r.images);
+                    if (imgs && imgs.length > 0) {
+                        imgHtml = `<img src="${imgs[0]}" class="w-full h-32 object-cover rounded-lg mb-2 border border-gray-100 shadow-sm">`;
+                    }
+                } catch (e) {
+                    // หากไม่มีรูปภาพให้เว้นไว้ หรือใส่ placeholder
+                }
+
+                // สร้างรูปแบบการ์ดห้องให้อ่านง่าย
+                reply += `
+                <div class="bg-white p-3 rounded-xl mb-4 border border-green-100 shadow-sm">
+                    ${imgHtml}
+                    <div class="font-bold text-green-700 text-sm mb-1 flex items-center gap-1">
+                        <i data-lucide="door-open" class="w-3 h-3"></i> 📍 ${r.name}
+                    </div>
+                    <div class="grid grid-cols-1 gap-1 text-[11px] text-gray-600 leading-tight">
+                        <div class="flex items-start gap-1">
+                            <span class="font-bold whitespace-nowrap">👥 รองรับสูงสุด:</span> 
+                            <span class="text-green-600 font-bold">${r.capacity} คน</span>
+                        </div>
+                        <div class="flex items-start gap-1">
+                            <span class="font-bold whitespace-nowrap">🏢 สถานที่:</span> 
+                            <span>${r.location || 'ไม่ระบุ'}</span>
+                        </div>
+                        <div class="flex items-start gap-1">
+                            <span class="font-bold whitespace-nowrap">✨ สิ่งอำนวยความสะดวก:</span> 
+                            <span>${r.amenities || '-'}</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            reply += `<p class="text-[10px] text-gray-400 italic">* ท่านสามารถดูรูปเพิ่มเติมได้ในหน้า "จองห้องรับรอง"</p>`;
         }
     } else if (text.includes('ความจุ') || text.includes('คน')) {
         const activeRooms = allRooms.filter(r => r.status === 'active');
